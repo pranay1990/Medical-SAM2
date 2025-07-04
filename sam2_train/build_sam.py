@@ -82,6 +82,34 @@ def _load_checkpoint(model, ckpt_path):
     if ckpt_path is not None:
         sd = torch.load(ckpt_path, map_location="cpu")["model"]
         missing_keys, unexpected_keys = model.load_state_dict(sd)
+
+        if missing_keys or unexpected_keys:
+            need_remap = (
+                missing_keys
+                and unexpected_keys
+                and all(k.startswith("sam_prompt_encoder.prompt_encoder") for k in missing_keys)
+                and all(
+                    k.startswith("sam_prompt_encoder")
+                    and not k.startswith("sam_prompt_encoder.prompt_encoder")
+                    for k in unexpected_keys
+                )
+            )
+            if need_remap:
+                logging.warning(
+                    "Remapping checkpoint keys between SPG and non-SPG prompt encoder"
+                )
+                new_sd = {}
+                for k, v in sd.items():
+                    if k.startswith("sam_prompt_encoder."):
+                        new_key = (
+                            "sam_prompt_encoder.prompt_encoder." + k[len("sam_prompt_encoder.") :]
+                        )
+                        new_sd[new_key] = v
+                    else:
+                        new_sd[k] = v
+                sd = new_sd
+                missing_keys, unexpected_keys = model.load_state_dict(sd)
+
         if missing_keys:
             logging.error(missing_keys)
             raise RuntimeError()
