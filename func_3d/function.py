@@ -217,6 +217,8 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
     threshold = (0.1, 0.3, 0.5, 0.7, 0.9)
     prompt_freq = args.prompt_freq
 
+    use_spg = getattr(args, "use_spg", False)
+
     lossfunc = criterion_G
     # lossfunc = paper_loss
 
