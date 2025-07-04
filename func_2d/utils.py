@@ -30,13 +30,7 @@ from PIL import Image
 from torch.autograd import Function
 
 
-import cfg
-
 import pandas as pd
-
-
-args = cfg.parse_args()
-device = torch.device('cuda', args.gpu_device)
 
 
 
@@ -302,7 +296,7 @@ def view(tensor):
 
 
 
-def vis_image(imgs, pred_masks, gt_masks, save_path, reverse = False, points = None):
+def vis_image(imgs, pred_masks, gt_masks, save_path, reverse=False, points=None, args=None):
     
     b,c,h,w = pred_masks.size()
     dev = pred_masks.get_device()
@@ -337,10 +331,9 @@ def vis_image(imgs, pred_masks, gt_masks, save_path, reverse = False, points = N
             imgs = imgs[:,0,:,:].unsqueeze(1).expand(b,3,h,w)
         pred_masks = pred_masks[:,0,:,:].unsqueeze(1).expand(b,3,h,w)
         gt_masks = gt_masks[:,0,:,:].unsqueeze(1).expand(b,3,h,w)
-        if points != None:
+        if points is not None and args is not None:
             for i in range(b):
-
-                p = np.round(points.cpu()/args.image_size * args.out_size).to(dtype = torch.int)
+                p = np.round(points.cpu() / args.image_size * args.out_size).to(dtype=torch.int)
                 
                 gt_masks[i,0,p[i,0]-2:p[i,0]+2,p[i,1]-2:p[i,1]+2] = 0.5
                 gt_masks[i,1,p[i,0]-2:p[i,0]+2,p[i,1]-2:p[i,1]+2] = 0.1

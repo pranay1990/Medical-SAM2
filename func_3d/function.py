@@ -11,11 +11,8 @@ from einops import rearrange
 from monai.losses import DiceLoss, FocalLoss
 from tqdm import tqdm
 
-import cfg
 from conf import settings
 from func_3d.utils import eval_seg
-
-args = cfg.parse_args()
 
 class CombinedLoss(nn.Module):
     def __init__(self, dice_weight=1, focal_weight=1):
@@ -31,9 +28,7 @@ class CombinedLoss(nn.Module):
         return self.dice_weight * dice + self.focal_weight * focal
 
 
-GPUdevice = torch.device('cuda', args.gpu_device)
-pos_weight = torch.ones([1]).cuda(device=GPUdevice)*2
-criterion_G = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+
 paper_loss = CombinedLoss(dice_weight=1 / 21, focal_weight=20 / 21)
 seed = torch.randint(1,11,(1,7))
 
@@ -63,11 +58,12 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
     video_length = args.video_length
 
     GPUdevice = torch.device('cuda:' + str(args.gpu_device))
+    pos_weight = torch.ones([1]).cuda(device=GPUdevice) * 2
+    lossfunc = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+
     prompt = args.prompt
     use_spg = getattr(args, "use_spg", False)
     prompt_freq = args.prompt_freq
-
-    lossfunc = criterion_G
     # lossfunc = paper_loss#.to(dtype=torch.bfloat16, device=GPUdevice)
 
     with tqdm(total=len(train_loader), desc=f'Epoch {epoch}', unit='img') as pbar:
@@ -218,7 +214,9 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
 
     use_spg = getattr(args, "use_spg", False)
 
-    lossfunc = criterion_G
+    GPUdevice = torch.device('cuda:' + str(args.gpu_device))
+    pos_weight = torch.ones([1]).cuda(device=GPUdevice) * 2
+    lossfunc = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     # lossfunc = paper_loss
 
     prompt = args.prompt
