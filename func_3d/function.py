@@ -30,7 +30,6 @@ class CombinedLoss(nn.Module):
 
 
 paper_loss = CombinedLoss(dice_weight=1 / 21, focal_weight=20 / 21)
-seed = torch.randint(1,11,(1,7))
 
 torch.backends.cudnn.benchmark = True
 scaler = torch.cuda.amp.GradScaler()

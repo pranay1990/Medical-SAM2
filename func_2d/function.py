@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 from conf import settings
 from func_2d.utils import *
-import pandas as pd
 
 
 mask_type = torch.float32
