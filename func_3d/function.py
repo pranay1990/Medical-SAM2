@@ -65,7 +65,6 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
     GPUdevice = torch.device('cuda:' + str(args.gpu_device))
     prompt = args.prompt
     use_spg = getattr(args, "use_spg", False)
-    use_spg = getattr(args, "use_spg", False)
     prompt_freq = args.prompt_freq
 
     lossfunc = criterion_G
