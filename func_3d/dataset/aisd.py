@@ -105,4 +105,4 @@ class AISD(Dataset):
                 "image_meta_dict": image_meta_dict,
             }
         else:
-            return {"image": img_tensor, "label": mask_dict, "image_meta_dict": image_meta_dict}
+          return {"image": img_tensor, "label": mask_dict, "image_meta_dict": image_meta_dict}
