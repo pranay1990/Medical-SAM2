@@ -88,6 +88,7 @@ class SAM2Base(torch.nn.Module):
         # hope to make recovery easier if there is a mistake and mitigate accumulation of errors
         soft_no_obj_ptr: bool = False,
         use_mlp_for_obj_ptr_proj: bool = False,
+        use_spg: bool = False,
         # extra arguments used to construct the SAM mask decoder; if not None, it should be a dict of kwargs to be passed into `MaskDecoder` class.
         sam_mask_decoder_extra_args=None,
         compile_image_encoder: bool = False,
@@ -99,6 +100,7 @@ class SAM2Base(torch.nn.Module):
         # Use level 0, 1, 2 for high-res setting, or just level 2 for the default setting
         self.use_high_res_features_in_sam = use_high_res_features_in_sam
         self.num_feature_levels = 3 if use_high_res_features_in_sam else 1
+        self.use_spg = use_spg
         self.use_obj_ptrs_in_encoder = use_obj_ptrs_in_encoder
         self.max_obj_ptrs_in_encoder = max_obj_ptrs_in_encoder
         if use_obj_ptrs_in_encoder:
@@ -205,15 +207,27 @@ class SAM2Base(torch.nn.Module):
 
         # build PromptEncoder and MaskDecoder from SAM
         # (their hyperparameters like `mask_in_chans=16` are from SAM code)
-        self.sam_prompt_encoder = PromptEncoder(
-            embed_dim=self.sam_prompt_embed_dim,
-            image_embedding_size=(
-                self.sam_image_embedding_size,
-                self.sam_image_embedding_size,
-            ),
-            input_image_size=(self.image_size, self.image_size),
-            mask_in_chans=16,
-        )
+        if self.use_spg:
+            from sam2_train.modeling.spg_prompt_encoder import SPGPromptEncoder
+            self.sam_prompt_encoder = SPGPromptEncoder(
+                embed_dim=self.sam_prompt_embed_dim,
+                image_embedding_size=(
+                    self.sam_image_embedding_size,
+                    self.sam_image_embedding_size,
+                ),
+                input_image_size=(self.image_size, self.image_size),
+                mask_in_chans=16,
+            )
+        else:
+            self.sam_prompt_encoder = PromptEncoder(
+                embed_dim=self.sam_prompt_embed_dim,
+                image_embedding_size=(
+                    self.sam_image_embedding_size,
+                    self.sam_image_embedding_size,
+                ),
+                input_image_size=(self.image_size, self.image_size),
+                mask_in_chans=16,
+            )
         self.sam_mask_decoder = MaskDecoder(
             num_multimask_outputs=3,
             transformer=TwoWayTransformer(
@@ -255,6 +269,8 @@ class SAM2Base(torch.nn.Module):
         mask_inputs=None,
         high_res_features=None,
         multimask_output=False,
+        image=None,
+        mirrored_image=None,
     ):
         """
         Forward SAM prompt encoders and mask heads.
@@ -331,11 +347,14 @@ class SAM2Base(torch.nn.Module):
             # a learned `no_mask_embed` to indicate no mask input in this case).
             sam_mask_prompt = None
 
-        sparse_embeddings, dense_embeddings = self.sam_prompt_encoder(
-            points=(sam_point_coords, sam_point_labels),
-            boxes=None,
-            masks=sam_mask_prompt,
-        )
+        if self.use_spg and image is not None and mirrored_image is not None:
+            sparse_embeddings, dense_embeddings = self.sam_prompt_encoder(image, mirrored_image)
+        else:
+            sparse_embeddings, dense_embeddings = self.sam_prompt_encoder(
+                points=(sam_point_coords, sam_point_labels),
+                boxes=None,
+                masks=sam_mask_prompt,
+            )
         (
             low_res_multimasks,
             ious,
@@ -721,6 +740,8 @@ class SAM2Base(torch.nn.Module):
         run_mem_encoder=True,
         # The previously predicted SAM mask logits (which can be fed together with new clicks in demo).
         prev_sam_mask_logits=None,
+        image=None,
+        mirrored_image=None,
     ):
         current_out = {"point_inputs": point_inputs, "mask_inputs": mask_inputs}
         # High-resolution feature maps for the SAM head, reshape (HW)BC => BCHW
@@ -765,6 +786,8 @@ class SAM2Base(torch.nn.Module):
                 mask_inputs=mask_inputs,
                 high_res_features=high_res_features,
                 multimask_output=multimask_output,
+                image=image,
+                mirrored_image=mirrored_image,
             )
         (
             _,
