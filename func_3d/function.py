@@ -107,7 +107,7 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
                                     inference_state=train_state,
                                     frame_idx=id,
                                     obj_id=ann_obj_id,
-                                    mask=gt_mask.squeeze(0),
+                                    mask=gt_mask.squeeze(),
                                 )
                             elif prompt == 'click':
                                 points = pt_dict[id][ann_obj_id].to(device=GPUdevice)
@@ -257,7 +257,7 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
                                     inference_state=train_state,
                                     frame_idx=id,
                                     obj_id=ann_obj_id,
-                                    mask=gt_mask.squeeze(0),
+                                    mask=gt_mask.squeeze(),
                                 )
                             elif prompt == 'click':
                                 points = pt_dict[id][ann_obj_id].to(device=GPUdevice)
