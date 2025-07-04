@@ -64,7 +64,22 @@ Python Version: 3.12.4
 **Step2:** Run the training and validation by:
 
 
- ``python train_3d.py -net sam2 -exp_name BTCV_MedSAM2 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -image_size 1024 -val_freq 1 -prompt bbox -prompt_freq 2 -dataset btcv -data_path ./data/btcv``
+``python train_3d.py -net sam2 -exp_name BTCV_MedSAM2 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -image_size 1024 -val_freq 1 -prompt bbox -prompt_freq 2 -dataset btcv -data_path ./data/btcv``
+
+### 3D case - Acute Ischemic Stroke Lesion Segmentation (AISD)
+
+The AISD dataset should be organized as
+
+```
+images/<case_id>/<frame>.png
+masks/<case_id>/<frame>.png
+```
+
+`get_dataloader` automatically splits the cases into 80% training and 20% testing. Prompts such as `bbox` or `click` are unnecessary because the self prompt generator (SPG) derives them from mirrored images.
+
+Run the training by:
+
+``python train_3d.py -net sam2 -exp_name AISD_MedSAM2 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -dataset aisd -data_path ./data/aisd --use_spg``
 
 
 ## 🚨 News
