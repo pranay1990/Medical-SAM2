@@ -6,17 +6,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm
 
-import cfg
 from conf import settings
 from func_2d.utils import *
 import pandas as pd
 
 
-args = cfg.parse_args()
-
-GPUdevice = torch.device('cuda', args.gpu_device)
-pos_weight = torch.ones([1]).cuda(device=GPUdevice)*2
-criterion_G = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 mask_type = torch.float32
 
 torch.backends.cudnn.benchmark = True
@@ -33,6 +27,10 @@ def train_sam(args, net: nn.Module, optimizer, train_loader, epoch, writer):
         torch.backends.cudnn.allow_tf32 = True
 
     
+    GPUdevice = torch.device('cuda', args.gpu_device)
+    pos_weight = torch.ones([1]).cuda(device=GPUdevice) * 2
+    lossfunc = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+
     # train mode
     net.train()
     optimizer.zero_grad()
@@ -40,7 +38,6 @@ def train_sam(args, net: nn.Module, optimizer, train_loader, epoch, writer):
     # init
     epoch_loss = 0
     memory_bank_list = []
-    lossfunc = criterion_G
     feat_sizes = [(256, 256), (128, 128), (64, 64)]
 
 
@@ -270,12 +267,11 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
     # eval mode
     net.eval()
 
-    n_val = len(val_loader) 
+    n_val = len(val_loader)
     threshold = (0.1, 0.3, 0.5, 0.7, 0.9)
     GPUdevice = torch.device('cuda:' + str(args.gpu_device))
-
-    # init
-    lossfunc = criterion_G
+    pos_weight = torch.ones([1]).cuda(device=GPUdevice) * 2
+    lossfunc = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     memory_bank_list = []
     feat_sizes = [(256, 256), (128, 128), (64, 64)]
     total_loss = 0
@@ -456,7 +452,15 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
                     for na in name:
                         img_name = na
                         namecat = namecat + img_name + '+'
-                    vis_image(imgs,pred, masks, os.path.join(args.path_helper['sample_path'], namecat+'epoch+' +str(epoch) + '.jpg'), reverse=False, points=None)
+                    vis_image(
+                        imgs,
+                        pred,
+                        masks,
+                        os.path.join(args.path_helper['sample_path'], namecat + 'epoch+' + str(epoch) + '.jpg'),
+                        reverse=False,
+                        points=None,
+                        args=args,
+                    )
                             
             pbar.update()
 
