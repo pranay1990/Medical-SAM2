@@ -47,9 +47,11 @@ def build_sam2_video_predictor(
     mode="eval",
     hydra_overrides_extra=[],
     apply_postprocessing=True,
+    use_spg=False,
 ):
     hydra_overrides = [
         "++model._target_=sam2_train.sam2_video_predictor.SAM2VideoPredictor",
+        f"++model.use_spg={str(use_spg).lower()}",
     ]
     if apply_postprocessing:
         hydra_overrides_extra = hydra_overrides_extra.copy()

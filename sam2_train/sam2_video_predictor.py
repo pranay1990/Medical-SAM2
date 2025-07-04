@@ -873,7 +873,7 @@ class SAM2VideoPredictor(SAM2Base):
 
         # Retrieve correct image features
         (
-            _,
+            image,
             _,
             current_vision_feats,
             current_vision_pos_embeds,
@@ -894,6 +894,8 @@ class SAM2VideoPredictor(SAM2Base):
             track_in_reverse=False,
             run_mem_encoder=False,
             prev_sam_mask_logits=None,
+            image=image,
+            mirrored_image=torch.flip(image, [-1]),
         )
         return current_out["obj_ptr"]
 
@@ -1315,7 +1317,7 @@ class SAM2VideoPredictor(SAM2Base):
         """Run tracking on a single frame based on current inputs and previous memory."""
         # Retrieve correct image features
         (
-            _,
+            image,
             _,
             current_vision_feats,
             current_vision_pos_embeds,
@@ -1337,6 +1339,8 @@ class SAM2VideoPredictor(SAM2Base):
             track_in_reverse=reverse,
             run_mem_encoder=run_mem_encoder,
             prev_sam_mask_logits=prev_sam_mask_logits,
+            image=image,
+            mirrored_image=torch.flip(image, [-1]),
         )
 
         # optionally offload the output to CPU memory to save GPU space
