@@ -12,7 +12,7 @@ EPOCH = 100
 step_size = 10
 i = 1
 MILESTONES = []
-while i * 5 <= EPOCH:
+while i * step_size <= EPOCH:
     MILESTONES.append(i* step_size)
     i += 1
 
