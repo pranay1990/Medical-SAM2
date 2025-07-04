@@ -29,7 +29,12 @@ def get_network(args, net, use_gpu=True, gpu_device = 0, distribution = True):
         sam2_checkpoint = args.sam_ckpt
         model_cfg = args.sam_config
 
-        net = build_sam2_video_predictor(config_file=model_cfg, ckpt_path=sam2_checkpoint, mode=None)
+        net = build_sam2_video_predictor(
+            config_file=model_cfg,
+            ckpt_path=sam2_checkpoint,
+            mode=None,
+            use_spg=args.use_spg,
+        )
     else:
         print('the network name you have entered is not supported yet')
         sys.exit()

@@ -1,7 +1,9 @@
 from .btcv import BTCV
 from .amos import AMOS
+from .aisd import AISD
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+import os
 
 
 
@@ -42,6 +44,35 @@ def get_dataloader(args):
         nice_train_loader = DataLoader(amos_train_dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
         nice_test_loader = DataLoader(amos_test_dataset, batch_size=1, shuffle=False, num_workers=1, pin_memory=True)
         '''end'''
+    elif args.dataset == 'aisd':
+        '''aisd data'''
+        image_root = os.path.join(args.data_path, "images")
+        case_ids = sorted(os.listdir(image_root))
+        split_idx = int(len(case_ids) * 0.8)
+        train_ids = case_ids[:split_idx]
+        test_ids = case_ids[split_idx:]
+
+        train_dataset = AISD(
+            args,
+            args.data_path,
+            case_ids=train_ids,
+            transform=None,
+            transform_msk=None,
+            mode="Training",
+            prompt=None if args.use_spg else args.prompt,
+        )
+        test_dataset = AISD(
+            args,
+            args.data_path,
+            case_ids=test_ids,
+            transform=None,
+            transform_msk=None,
+            mode="Test",
+            prompt=None if args.use_spg else args.prompt,
+        )
+
+        nice_train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=1, pin_memory=True)
+        nice_test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1, pin_memory=True)
 
     else:
         print("the dataset is not supported now!!!")
