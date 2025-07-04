@@ -105,5 +105,4 @@ class AISD(Dataset):
                 "image_meta_dict": image_meta_dict,
             }
         else:
-            masks = torch.stack([v.get(1, torch.zeros(1, self.img_size, self.img_size)) for v in mask_dict.values()])
-            return {"image": img_tensor, "label": masks, "image_meta_dict": image_meta_dict}
+            return {"image": img_tensor, "label": mask_dict, "image_meta_dict": image_meta_dict}

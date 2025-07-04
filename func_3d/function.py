@@ -64,6 +64,8 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
 
     GPUdevice = torch.device('cuda:' + str(args.gpu_device))
     prompt = args.prompt
+    use_spg = getattr(args, "use_spg", False)
+    use_spg = getattr(args, "use_spg", False)
     prompt_freq = args.prompt_freq
 
     lossfunc = criterion_G
@@ -74,11 +76,12 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
             torch.cuda.empty_cache()
             imgs_tensor = pack['image']
             mask_dict = pack['label']
-            if prompt == 'click':
-                pt_dict = pack['pt']
-                point_labels_dict = pack['p_label']
-            elif prompt == 'bbox':
-                bbox_dict = pack['bbox']
+            if not use_spg:
+                if prompt == 'click':
+                    pt_dict = pack['pt']
+                    point_labels_dict = pack['p_label']
+                elif prompt == 'bbox':
+                    bbox_dict = pack['bbox']
             imgs_tensor = imgs_tensor.squeeze(0)
             imgs_tensor = imgs_tensor.to(dtype = torch.float32, device = GPUdevice)
             
@@ -98,7 +101,15 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
                 for id in prompt_frame_id:
                     for ann_obj_id in obj_list:
                         try:
-                            if prompt == 'click':
+                            if use_spg:
+                                gt_mask = mask_dict[id][ann_obj_id].to(dtype=torch.float32, device=GPUdevice)
+                                _, _, _ = net.train_add_new_mask(
+                                    inference_state=train_state,
+                                    frame_idx=id,
+                                    obj_id=ann_obj_id,
+                                    mask=gt_mask.squeeze(0),
+                                )
+                            elif prompt == 'click':
                                 points = pt_dict[id][ann_obj_id].to(device=GPUdevice)
                                 labels = point_labels_dict[id][ann_obj_id].to(device=GPUdevice)
                                 _, _, _ = net.train_add_new_points(
@@ -152,11 +163,12 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
                             ax[0].axis('off')
                             ax[1].imshow(pred[0, 0, :, :].detach().cpu().numpy() > 0.5, cmap='gray')
                             ax[1].axis('off')
-                            try:
-                                bbox = bbox_dict[id][ann_obj_id]
-                                ax[1].add_patch(plt.Rectangle((bbox[0][0], bbox[0][1]), bbox[0][2] - bbox[0][0], bbox[0][3] - bbox[0][1], edgecolor='green', facecolor=(0,0,0,0), lw=2))
-                            except KeyError:
-                                pass
+                            if not use_spg and prompt == 'bbox':
+                                try:
+                                    bbox = bbox_dict[id][ann_obj_id]
+                                    ax[1].add_patch(plt.Rectangle((bbox[0][0], bbox[0][1]), bbox[0][2] - bbox[0][0], bbox[0][3] - bbox[0][1], edgecolor='green', facecolor=(0,0,0,0), lw=2))
+                                except KeyError:
+                                    pass
                             ax[2].imshow(mask[0, 0, :, :].detach().cpu().numpy(), cmap='gray')
                             ax[2].axis('off')
                             plt.savefig(f'./temp/train/{name[0]}/{id}/{obj_list.index(ann_obj_id)}.png', bbox_inches='tight', pad_inches=0)
@@ -214,11 +226,12 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
         for pack in val_loader:
             imgs_tensor = pack['image']
             mask_dict = pack['label']
-            if prompt == 'click':
-                pt_dict = pack['pt']
-                point_labels_dict = pack['p_label']
-            elif prompt == 'bbox':
-                bbox_dict = pack['bbox']
+            if not use_spg:
+                if prompt == 'click':
+                    pt_dict = pack['pt']
+                    point_labels_dict = pack['p_label']
+                elif prompt == 'bbox':
+                    bbox_dict = pack['bbox']
             if len(imgs_tensor.size()) == 5:
                 imgs_tensor = imgs_tensor.squeeze(0)
             frame_id = list(range(imgs_tensor.size(0)))
@@ -238,7 +251,15 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
                 for id in prompt_frame_id:
                     for ann_obj_id in obj_list:
                         try:
-                            if prompt == 'click':
+                            if use_spg:
+                                gt_mask = mask_dict[id][ann_obj_id].to(dtype=torch.float32, device=GPUdevice)
+                                _, _, _ = net.train_add_new_mask(
+                                    inference_state=train_state,
+                                    frame_idx=id,
+                                    obj_id=ann_obj_id,
+                                    mask=gt_mask.squeeze(0),
+                                )
+                            elif prompt == 'click':
                                 points = pt_dict[id][ann_obj_id].to(device=GPUdevice)
                                 labels = point_labels_dict[id][ann_obj_id].to(device=GPUdevice)
                                 _, _, _ = net.train_add_new_points(
