@@ -26,6 +26,8 @@ def main():
 
     net = get_network(args, args.net, use_gpu=args.gpu, gpu_device=GPUdevice, distribution = args.distributed)
     net.to(dtype=torch.bfloat16)
+    # Ensure the dataloader uses the same image size as the model
+    args.image_size = getattr(net, "image_size", args.image_size)
     if args.pretrain:
         print(args.pretrain)
         weights = torch.load(args.pretrain)
