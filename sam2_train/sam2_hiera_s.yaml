@@ -86,7 +86,8 @@ model:
 
   num_maskmem: 7
   image_size: 1024
-  backbone_stride: 32
+  # match the stride of the features returned by the image encoder
+  backbone_stride: 16
   # apply scaled sigmoid on mask logits for memory encoder, and directly feed input mask as output mask
   sigmoid_scale_for_mem_enc: 20.0
   sigmoid_bias_for_mem_enc: -10.0
